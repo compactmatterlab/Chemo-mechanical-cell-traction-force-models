@@ -5,10 +5,9 @@
 % 2. myosin.m to update the state of all motors for all filaments
 % 3. calculatexx.m to find the total displacement by myosin on a filament
 options = optimset('Display','off');
-
+params
 while t < runtime
     t = t+1;
-    
     for jj = 1:nactin
         myosin 
     end

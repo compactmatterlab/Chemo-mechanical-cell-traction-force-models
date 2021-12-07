@@ -349,8 +349,8 @@ N(jj,t) = state1(jj,t) + state4(jj,t);
 
 if t == 1
     xx(jj,t) = fsolve(@(x) (-(N(jj,t)*km*y)+(km*sum(strain(jj,:)))+(nn(jj,t)*km*x)+...
-        +F+(drag*x/delta_t)),0,options);
-    delta(jj,t) = 0;
+        (k_spring*x)+F+(drag*x/delta_t)),0,options);
+    delta(jj,t) = xx(jj,t);
 else
 
         xx(jj,t) = fsolve(@(x) (-(N(jj,t)*km*y)+(km*sum(strain(jj,:)))+(nn(jj,t)*km*x)+ ...

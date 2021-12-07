@@ -3,39 +3,31 @@
 % rates, initial conditions, constants, etc...
 rows = 10; % number of rows
 cols = rows; % number of columms
-actlen = 3000; % actin length in nm                                        % source?
-nactin = rows*cols; % number of actin filaments                            % source?
-nmotors = 60; % number of myosin heads                                     % source? 
+actlen = 3000; % actin length in nm                                         
+nactin = rows*cols; % number of actin filaments                             
+nmotors = 60; % number of myosin heads                                      
 seconds = 100;
 realtime = seconds*1000;% converted to  ms
 delta_t = 1;
 runtime = realtime/delta_t; % simulations time in ms
-% mappingMatrix % call to get matrix of neighbors for every element
-%ms = 1e-3; % seconds to miliseconds conversion
 ms = 1e-3;
-% act_ka = 0.5*ms;                    % integrin activation rate s^-1        % source
-% act_kd = 1e-4*ms;                 % integrin deactivation rate s^-1        % source 
-act_ka = 23*ms; % DOI: 10.1126/sciadv.aax1909
-act_kd = 0.01*ms; % DOI: 10.1126/sciadv.aax1909, in supplemental
-%sf_kon = 0.41*ms;            % filament recruitment rate s^-1              % Bidone et al., 2019; Vicente-Manzanares et al., 2009
-sf_kon = 0.65*ms; % vinculin binding rate limiting
-sf_koff = 8*ms;              % filament deattachment rate s^-1           % source 
-int_bind = 1e3*ms;                 % integrin-ligand attachment rate s^-1  % source
-vincb = 0.65*ms; % s^-1, vinculin->talin binding rate, DOI:10.1126/sciadv.aaz4707
-trates = [0.018 99 2.5e-5 4.2e-6 1.7e-8]*ms; % ms^-1, converted to  talin unfolding rates DOI:10.1038/ncomms11966
-% trates = [0.00000001 99]*ms; % ms^-1, converted to  talin unfolding rates DOI:10.1038/ncomms11966
-
-FitA = 3309; 			% slip ms from Ben's fit
-FitB = 0.0000003942; % catch ms^-1 from Ben's fit
-FitC = 0.05819;	% slip ms^-1 from Ben's fit
+act_ka = 23*ms; % rate ms^-1
+act_kd = 0.01*ms; % rate ms^-1
+sf_kon = 0.65*ms; % rate ms^-1
+sf_koff = 8*ms; % rate ms^-1
+int_bind = 1e3*ms;% integrin-ligand attachment rate s^-1  % source
+vincb = 0.65*ms; % s^-1, vinculin->talin binding rate
+trates = [0.018 99 2.5e-5 4.2e-6 1.7e-8]*ms; % ms^-1, converted to  talin unfolding rates 
+FitA = 3309; 		% ms
+FitB = 0.0000003942; % catch ms^-1  
+FitC = 0.05819;	% slip ms^-1  
 k12 = 0.00014;% in ms, rate of transition from state 1 to state 2, 
 k23 = 0.007;% in ms, rate of transition from state 2 to state 3
 k32 = 0.011;% in ms, rate of transition from state 3 to state 2
 k34 = 0.00016;% in ms, rate of transition from state 3 to state 4
 k41 = 0.028;% in ms, rate of transition from state 4 to state 1
-% k_on = 1e3*ms; % integrin kon in second
 tao = 1; % previous time stamp
-epsilon = 0.74; % value for dissociation probability                       % Ben
+epsilon = 0.74; % value for dissociation probability                      
 km = 4; % pN/nm, stiffness of motor stalk
 F = 0; % applied force in pN
 t = 0; % time ms
@@ -51,12 +43,9 @@ drag = 6*10^-4; % pN*ms/nm
 len_scale = 0.1; % um
 k_spring_vals = [1 2 10 20 100 200 1000 10000]; % substrate stiffness kPa% experimental ratios
 k_spring_vals = k_spring_vals*len_scale;
-%     veh      0.1       1         10       100      1000
 %     WB(1)    WB(2)     WB(3)     WB(4)    WB(5)    WB(6)
 WB = [0.1 0.2 1 2 10];
-% WBratio = WB(1);% select which ratio to use
 ks152 = .01;% phosphorylated to dephosphorylated
-% k215 = (WBratio^-1)*ks152;% dephosporylated to phosphorylated  
 % -------------------------------------------------------------------------
 %                    constant probabilities
 %--------------------------------------------------------------------------
@@ -97,22 +86,10 @@ sf_recruit = zeros(nactin, runtime,1); % stress fiber recruited matrix
 sf_branch = zeros(nactin, runtime,1); % stress fiber branched matrix
 mixmat2 = zeros(nactin, runtime, 1); % matrix for filament recruitment
 mixmat3 = zeros(nactin, runtime, 1); % matrix for integrin branching
-Force = zeros(nactin, runtime,1);
-% actmatrix = zeros(nactin, runtime, 1); % update matrix to keep track of who has been updated
-% attmatrix = actmatrix;
-% sfmatrix = actmatrix;
-% prob_sfattch(jj,t) = 1 - exp(-sf_kon * (delta_t)); % constant; can be moved out of loop
-% kslip = 5.2x10-4          % slip unbinding constant s^-1
-% kcatch = 55               % catch unbinding constant s^-1
-% ku = kslip + kcatch       % integrin force-dependent unbinding rate
-% ks0 = 5.2e-4; % slip koff in seconds                                       % source?
-% kc0 = 55; % catch koff in seconds                                          % source?
-% ks0 = ks0 * ms; % slip koff in miliseconds                                 % source? 
-% kc0 = kc0 * ms;% catch koff in miliseconds                                 % source?
+Force = zeros(nactin, runtime,1);                               
 n12=zeros(nactin,runtime,1); % count of 1 to 2 transitions per run
-n34=zeros(nactin,runtime,1);
-% ATP = 1; % ATP concentration in microM
-% lamda = 1; % probability that the actin filament is open 
+n34=zeros(nactin,runtime,1); % count of 3 to 4 transitions per run
+
 N = zeros(nactin,runtime,1);% count of state 1 + state 4
 nn = zeros(nactin,runtime,1); % count of state 1 + state 4 + state 3
 % k_spring = k_spring_vals(4); % choose value for substrate stiffness
@@ -132,7 +109,6 @@ myo_pos = myo_pos';
 steps = zeros(nactin,nmotors,1);% matrix of zeros to record number of steps (full cycle) for each motor
 change = zeros(nactin,nmotors,1);% matrix of zeros to record number of state changes for each motor
 tao = ones(nactin,nmotors);% matrix of ones for previous time stamp
-% matrix of twos for cycle start point set 50 percent of motors to be in 2, 50% in 1.5
 state = ones(nactin,nmotors)*15;     
 init_on_motors = randperm(nmotors)';
 state(init_on_motors(1:ceil(1*nmotors)),:)=2;
